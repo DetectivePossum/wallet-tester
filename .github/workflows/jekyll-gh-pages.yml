@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>SOL Wallet Tester</title>
+  <script src="https://cdn.jsdelivr.net/npm/bs58@5.0.0/dist/bs58.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.3/lib/index.iife.min.js"></script>
+</head>
+<body style="font-family: sans-serif; padding: 20px;">
+  <h2>🔑 Solana Wallet Tester</h2>
+  <p>Paste your <b>PRIVATE_KEY_BASE58</b> from Phantom:</p>
+  <textarea id="pk" style="width:100%;height:80px;"></textarea><br><br>
+  <button onclick="testKey()">Test Wallet</button>
+  <pre id="out" style="margin-top:20px;white-space:pre-wrap;"></pre>
+
+  <script>
+    async function testKey() {
+      const pk = document.getElementById("pk").value.trim();
+      if (!pk) {
+        alert("Please paste a base58 private key");
+        return;
+      }
+      try {
+        // Decode key
+        const secret = bs58.default.decode(pk);
+        const keypair = solanaWeb3.Keypair.fromSecretKey(secret);
+
+        // Sign test message
+        const msg = new TextEncoder().encode("pumpfun test");
+        const sig = keypair.sign(msg).signature;
+
+        // Connect to Solana RPC
+        const connection = new solanaWeb3.Connection(
+          solanaWeb3.clusterApiUrl("mainnet-beta"),
+          "confirmed"
+        );
+
+        // Fetch balance
+        const balanceLamports = await connection.getBalance(keypair.publicKey);
+        const balanceSol = balanceLamports / solanaWeb3.LAMPORTS_PER_SOL;
+
+        // Show results
+        document.getElementById("out").textContent =
+          "✅ Wallet Public Key:\n" + keypair.publicKey.toBase58() +
+          "\n\n✅ Test Signature:\n" + bs58.default.encode(sig).slice(0,50) + "..." +
+          "\n\n💰 Balance: " + balanceSol + " SOL";
+
+      } catch (e) {
+        document.getElementById("out").textContent = "❌ Error: " + e.message;
+      }
+    }
+  </script>
+</body>
+</html>
